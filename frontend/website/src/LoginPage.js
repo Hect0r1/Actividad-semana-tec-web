@@ -1,12 +1,52 @@
 import {useRef} from "react";
+import {useLocation, useNavigate} from "react-router-dom";
+import {API_URL} from "./config";
 
-function LoginPage() {
+function LoginPage({setToken, setUserData}) {
+  const location = useLocation();
+  const urlParams = new URLSearchParams(location.search);
+  const navigate = useNavigate();
   const email =useRef("")
   const password = useRef("")
   function submitLogin(e){
       e.preventDefault();
-      console.log(email.current.value)
-      console.log(password.current.value)
+      let successful = false
+      fetch(API_URL+"/token", {
+        method: "POST",
+        body: new URLSearchParams({
+          'username': email.current.value,
+          'password': password.current.value,
+        })
+      }).then((data) => {
+        if(data.status == 200) {
+          successful = true
+        }
+        return data.json()
+      })
+      .then((data) => {
+        if(successful){
+          localStorage.setItem("token", data.access_token)
+          fetch(API_URL+"/users/me/", {
+            headers: {"Authorization": "Bearer "+data.access_token}
+          })
+          .then((data) => {
+            return data.json()
+          })
+          .then((data) => {
+            fetch("http://api.github.com/users/"+data.github_user)
+            .then((data) => data.json())
+            .then((data) => {
+              localStorage.setItem("userData", JSON.stringify(data))
+              setUserData(data)
+              setToken(localStorage.getItem("token"))
+              navigate(urlParams.get("next") || "/")
+            })
+          })
+        } else {
+          throw new Error(data.detail)
+        }
+      })
+      .catch((data) =>alert(data))
   }
   return (
     <>

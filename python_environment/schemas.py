@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import Optional
 
 
 class ItemBase(BaseModel):
@@ -24,12 +25,24 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str
+    github_user:Optional[str] = ""
 
 
 class User(UserBase):
     id: int
     is_active: bool
+    github_user: Optional[str] = ""
     items: list[Item] = []
+
+    class Config:
+        orm_mode = True
+
+class UserActiveUpdate(UserBase):
+    email: Optional[str] = None
+    id: Optional[int] = None
+    is_active: Optional[bool] = None
+    github_user: Optional[str] = None
+    items: Optional[list[Item]] = None
 
     class Config:
         orm_mode = True
